@@ -11,6 +11,7 @@ services:
       - "8000:8000"
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PREFECT_API_URL=http://prefect:4200/api
       - ARTIFACTS_PATH=artifacts
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     volumes:
@@ -45,7 +46,7 @@ services:
 
   # ── Prefect Server ───────────────────────────────────────────────────────────
   prefect:
-    image: prefecthq/prefect:2-python3.10
+    image: prefecthq/prefect:3-python3.10
     container_name: airsense-prefect
     command: prefect server start --host 0.0.0.0 --port 4200
     ports:

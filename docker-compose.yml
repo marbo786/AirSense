@@ -52,7 +52,8 @@ services:
     ports:
       - "4200:4200"
     environment:
-      - PREFECT_API_URL=http://0.0.0.0:4200/api
+      - PREFECT_API_URL=http://localhost:4200/api
+      - PREFECT_UI_API_URL=http://localhost:4200/api
     networks:
       - airsense-net
     restart: unless-stopped

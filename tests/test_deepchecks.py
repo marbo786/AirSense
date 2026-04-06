@@ -223,7 +223,6 @@ class TestModelPerformance:
             reg = joblib.load(path)
             ARTIFACTS_PATH / "regressor_scaler.joblib"
 
-
             test_ds = Dataset(
                 pd.concat([X_test, y_test], axis=1).reset_index(drop=True),
                 label="PM2.5",

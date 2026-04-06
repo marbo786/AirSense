@@ -10,7 +10,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_TRACKING_URI=file:///app/mlruns
       - PREFECT_API_URL=http://prefect:4200/api
       - ARTIFACTS_PATH=artifacts
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}

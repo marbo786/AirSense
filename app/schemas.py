@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 # ── Shared ────────────────────────────────────────────────────────────────────
 
+
 class MapNode(BaseModel):
     city: str
     country: str
@@ -18,8 +19,10 @@ class MapNode(BaseModel):
     aqi_value: float
     aqi_category: str
 
+
 class GlobalMapResponse(BaseModel):
     nodes: list[MapNode]
+
 
 class HealthResponse(BaseModel):
     status: str

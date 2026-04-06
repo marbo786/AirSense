@@ -81,6 +81,7 @@ app.include_router(recommend_router)
 app.include_router(upload_router)
 app.include_router(metrics_router)
 
+
 @app.get("/", tags=["Root"])
 def root():
     return {

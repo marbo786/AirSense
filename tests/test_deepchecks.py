@@ -36,20 +36,24 @@ def prsa_sample():
 @pytest.fixture(scope="module")
 def train_test_split_data(prsa_sample):
     from sklearn.model_selection import train_test_split
-    
+
     path = ARTIFACTS_PATH / "regressor_features.joblib"
     if path.exists():
         FEATURES = joblib.load(path)
     else:
         # Fallback to everything except target and metadata
-        FEATURES = [c for c in prsa_sample.columns if c not in ["PM2.5", "station", "datetime", "AQI_Label", "AQI_Category"]]
+        FEATURES = [
+            c
+            for c in prsa_sample.columns
+            if c not in ["PM2.5", "station", "datetime", "AQI_Label", "AQI_Category"]
+        ]
 
     # Ensure missing columns are padded with 0 (since prsa_sample may not trigger all lag rows)
     X = prsa_sample.copy()
     for col in FEATURES:
         if col not in X.columns:
             X[col] = 0.0
-            
+
     X = X[FEATURES].fillna(0)
     y = prsa_sample["PM2.5"].fillna(0)
 
@@ -189,13 +193,13 @@ class TestModelPerformance:
         if scaler_path.exists():
             scaler = joblib.load(scaler_path)
             classifier_features = joblib.load(ARTIFACTS_PATH / "classifier_features.joblib")
-            
+
             # Ensure missing columns are padded for the classifier
             X_clf = X_test.copy()
             for col in classifier_features:
                 if col not in X_clf.columns:
                     X_clf[col] = 0.0
-            
+
             X_s = scaler.transform(X_clf[classifier_features].fillna(0))
         else:
             X_s = X_test.fillna(0).values

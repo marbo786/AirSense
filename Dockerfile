@@ -31,7 +31,7 @@ COPY app/ ./app/
 COPY ml/ ./ml/
 COPY data/ ./data/
 COPY pipelines/ ./pipelines/
-COPY ["datasets/AQI and Lat Long of Countries.csv", "./datasets/"]
+COPY datasets/ ./datasets/
 COPY artifacts/ ./artifacts/
 
 # Environment defaults

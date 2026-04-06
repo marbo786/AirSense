@@ -26,6 +26,7 @@ prefect
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest
 pytest-asyncio
+pytest-timeout
 deepchecks
 
 # ── Code Quality ──────────────────────────────────────────────────────────────

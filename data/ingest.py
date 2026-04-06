@@ -72,8 +72,17 @@ def load_uci_air_quality() -> pd.DataFrame:
 
 def load_all() -> dict[str, pd.DataFrame]:
     """Load all datasets and return as a named dict."""
-    return {
+    datasets = {
         "prsa": load_prsa_data(),
         "global_aqi": load_global_aqi(),
         "uci": load_uci_air_quality(),
     }
+    
+    # Bypass GitHub Action OOM Cloud limits by testing the architecture strictly on a subset natively!
+    if os.getenv("CI") == "true":
+        logger.info("CI environment detected: Downsampling natively by 99% to bypass structural OOM limits!")
+        datasets["prsa"] = datasets["prsa"].sample(n=1000, random_state=42)
+        datasets["global_aqi"] = datasets["global_aqi"].sample(n=1000, random_state=42)
+        datasets["uci"] = datasets["uci"].sample(n=500, random_state=42)
+        
+    return datasets

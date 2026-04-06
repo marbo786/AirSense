@@ -21,12 +21,7 @@ env/
 .idea/
 *.DS_Store
 
-# ML artifacts (binaries tracked via git-lfs or committed explicitly)
-artifacts/*.pkl
-artifacts/*.joblib
-artifacts/*.json
-
-# MLflow
+# MLflow (local experiment logs — not needed in git)
 mlruns/
 mlartifacts/
 
@@ -38,8 +33,7 @@ mlartifacts/
 htmlcov/
 .coverage
 
-# Streamlit
-.streamlit/secrets.toml
+
 
 # Docker
 .docker/

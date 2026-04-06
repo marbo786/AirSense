@@ -1,0 +1,72 @@
+{
+  "classification": {
+    "best_model": "XGBoost",
+    "metrics": {
+      "accuracy": 0.8664621385083714,
+      "f1_macro": 0.8619257797308645
+    },
+    "all": {
+      "RandomForest": {
+        "accuracy": 0.8544758371385084,
+        "f1_macro": 0.8485790082262482
+      },
+      "XGBoost": {
+        "accuracy": 0.8664621385083714,
+        "f1_macro": 0.8619257797308645
+      }
+    }
+  },
+  "regression": {
+    "best_model": "GradientBoosting",
+    "metrics": {
+      "rmse": 13.148161835515152,
+      "mae": 7.502090900238201,
+      "r2": 0.9743142525951484
+    },
+    "all": {
+      "GradientBoosting": {
+        "rmse": 13.148161835515152,
+        "mae": 7.502090900238201,
+        "r2": 0.9743142525951484
+      },
+      "RandomForest": {
+        "rmse": 13.550523802833002,
+        "mae": 7.349252840748915,
+        "r2": 0.9727181201339808
+      },
+      "Ridge": {
+        "rmse": 16.693760781202425,
+        "mae": 9.740085753088259,
+        "r2": 0.9585933117044911
+      }
+    }
+  },
+  "timeseries": {
+    "best_model": "ARIMA",
+    "metrics": {
+      "rmse": 68.6542615119204,
+      "mae": 67.70732787942133
+    },
+    "all": {
+      "Prophet": {
+        "rmse": 89.2556905195167,
+        "mae": 88.826122251024
+      },
+      "ARIMA": {
+        "rmse": 68.6542615119204,
+        "mae": 67.70732787942133
+      }
+    }
+  },
+  "clustering": {
+    "best_model": "KMeans",
+    "all": {
+      "KMeans": {
+        "silhouette": 0.2648269572316753
+      },
+      "DBSCAN": {
+        "silhouette": -1.0
+      }
+    }
+  }
+}

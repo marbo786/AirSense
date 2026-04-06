@@ -78,13 +78,19 @@ def load_all() -> dict[str, pd.DataFrame]:
         "uci": load_uci_air_quality(),
     }
 
-    # Bypass GitHub Action OOM Cloud limits by testing the architecture strictly on a subset natively!
+    # CI: stratified downsample keeps all 12 stations, avoids GitHub OOM crashes
     if os.getenv("CI") == "true":
-        logger.info(
-            "CI environment detected: Downsampling natively by 99% to bypass structural OOM limits!"
+        logger.info("CI environment detected: stratified downsample to bypass OOM limits.")
+        # ~83 rows per station = ~1000 rows, all 12 stations always represented
+        datasets["prsa"] = (
+            datasets["prsa"]
+            .groupby("station", group_keys=False)
+            .apply(lambda x: x.sample(min(83, len(x)), random_state=42))
+            .reset_index(drop=True)
         )
-        datasets["prsa"] = datasets["prsa"].sample(n=1000, random_state=42)
-        datasets["global_aqi"] = datasets["global_aqi"].sample(n=1000, random_state=42)
-        datasets["uci"] = datasets["uci"].sample(n=500, random_state=42)
+        datasets["global_aqi"] = datasets["global_aqi"].sample(
+            n=min(1000, len(datasets["global_aqi"])), random_state=42
+        )
+        datasets["uci"] = datasets["uci"].sample(n=min(500, len(datasets["uci"])), random_state=42)
 
     return datasets

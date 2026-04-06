@@ -34,8 +34,10 @@ ML-PROJ/
 │   ├── test_api.py
 │   ├── test_models.py
 │   └── test_deepchecks.py
-├── dashboard/
-│   └── app.py              # Streamlit 5-page dashboard
+├── frontend/               # Vanilla JS/CSS AirSense Glassmorphism UI
+│   ├── index.html          # Main SPA layout with macOS Dock
+│   ├── style.css           # Premium styling with Backdrop filters
+│   └── app.js              # Native Chart.js rendering and REST API callers
 ├── datasets/               # Raw CSV files
 ├── artifacts/              # Saved models + evaluation outputs
 ├── .github/workflows/      # CI/CD pipelines
@@ -82,11 +84,11 @@ uvicorn app.main:app --reload
 # Swagger UI → http://localhost:8000/docs
 ```
 
-### 4. Start Streamlit dashboard
+### 4. Start NGINX Frontend
 
 ```bash
-streamlit run dashboard/app.py
-# Dashboard → http://localhost:8501
+docker compose up -d frontend
+# Dashboard → http://localhost:8080
 ```
 
 ### 5. Docker Compose (all services)
@@ -100,7 +102,7 @@ docker compose up --build
 | FastAPI | http://localhost:8000/docs |
 | MLflow | http://localhost:5000 |
 | Prefect | http://localhost:4200 |
-| Streamlit | http://localhost:8501 |
+| Frontend | http://localhost:8080 |
 
 ---
 
@@ -151,7 +153,7 @@ Datasets → Prefect Pipeline → MLflow Tracking → Artifacts
                                                     ↓
                              FastAPI ← model_store.py
                                 ↓
-                         Streamlit Dashboard
-                         GitHub Actions CI/CD
-                         Docker Compose
+                        Vanilla JS NGINX SPA
+                        GitHub Actions CI/CD
+                        Docker Compose
 ```

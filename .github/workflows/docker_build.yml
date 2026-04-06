@@ -21,10 +21,9 @@ jobs:
         with:
           context: .
           target: app
-          push: false        # Set to true + add docker/login-action to push to registry
-          tags: |
-            airsense:latest
-            airsense:${{ github.sha }}
+          push: false
+          load: true
+          tags: airsense:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

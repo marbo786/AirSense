@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirSense | World Map Intelligence</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Floating Glass Sidebar -->
+    <aside class="glass-sidebar">
+        <header>
+            <div class="logo">
+                <span>🌍</span>
+                <h1>AirSense</h1>
+            </div>
+            <p>Live Air Quality Intelligence</p>
+        </header>
+
+        <section class="metrics-panel">
+            <h2>Global Stats</h2>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span class="label">Stations</span>
+                    <span class="value" id="total-stations">--</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Hazardous</span>
+                    <span class="value hazardous-text" id="total-hazardous">--</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="predict-panel">
+            <h2>Live PM2.5 Projection</h2>
+            <p class="subtitle">Predict the air quality via machine learning dynamically based on local conditions.</p>
+            
+            <form id="predict-form">
+                <div class="input-grid">
+                    <div class="input-group">
+                        <label>Temperature (°C)</label>
+                        <input type="number" id="inp-temp" value="15" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Pressure (hPa)</label>
+                        <input type="number" id="inp-pres" value="1010" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Dew Point (°C)</label>
+                        <input type="number" id="inp-dewp" value="5" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Ozone (µg/m³)</label>
+                        <input type="number" id="inp-o3" value="60" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>NO2 (µg/m³)</label>
+                        <input type="number" id="inp-no2" value="30" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>SO2 (µg/m³)</label>
+                        <input type="number" id="inp-so2" value="10" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>PM10 (µg/m³)</label>
+                        <input type="number" id="inp-pm10" value="50" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>CO (µg/m³)</label>
+                        <input type="number" id="inp-co" value="800" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Rain (mm)</label>
+                        <input type="number" id="inp-rain" value="0" step="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label>Wind Speed (m/s)</label>
+                        <input type="number" id="inp-wspm" value="1.5" step="0.1">
+                    </div>
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label>Wind Direction</label>
+                        <select id="inp-wd">
+                            <option value="0">N</option>
+                            <option value="1">NNE</option>
+                            <option value="2">NE</option>
+                            <option value="3">ENE</option>
+                            <option value="4">E</option>
+                            <option value="5">ESE</option>
+                            <option value="6">SE</option>
+                            <option value="7">SSE</option>
+                            <option value="8">S</option>
+                            <option value="9">SSW</option>
+                            <option value="10">SW</option>
+                            <option value="11">WSW</option>
+                            <option value="12">W</option>
+                            <option value="13">WNW</option>
+                            <option value="14">NW</option>
+                            <option value="15">NNW</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="glow-btn">Initialize Prediction</button>
+            </form>
+
+            <div id="prediction-result" class="hidden result-box">
+                <h3 id="res-pm25">-- µg/m³</h3>
+                <span id="res-category" class="badge">--</span>
+            </div>
+        </section>
+
+        <section class="recommend-panel">
+            <h2>Outdoor Safety Forecast</h2>
+            <p class="subtitle">Analyzes tomorrow's pollution clusters to pinpoint the healthiest times to exercise outside.</p>
+            
+            <form id="recommend-form">
+                <div class="input-grid">
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label style="display:flex; align-items:center; gap:0.4rem;">Target Station
+                            <span class="tooltip-icon" title="ML predictions are currently restricted to the Beijing PRSA grid due to the strict necessity of hourly historical time-series data for training.">ℹ️</span>
+                        </label>
+                        <select id="inp-station">
+                            <option value="Aotizhongxin">Aotizhongxin</option>
+                            <option value="Changping">Changping</option>
+                            <option value="Dingling">Dingling</option>
+                            <option value="Dongsi">Dongsi</option>
+                            <option value="Guanyuan">Guanyuan</option>
+                            <option value="Gucheng">Gucheng</option>
+                            <option value="Huairou">Huairou</option>
+                            <option value="Nongzhanguan">Nongzhanguan</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="glow-btn" style="background: var(--accent-alt);">Forecast Safe Outdoor Times</button>
+            </form>
+
+            <div id="recommend-result" class="hidden result-box" style="text-align: left; padding: 1rem;">
+                <ul id="recommend-list" class="rec-list"></ul>
+            </div>
+        </section>
+        
+        <footer>
+            <p>Powered by FastAPI & Leaflet</p>
+        </footer>
+    </aside>
+
+    <!-- MAC OS STYLE DOCK -->
+    <div class="dock-container">
+        <div class="dock">
+            <button class="dock-btn active" onclick="closeAllModals(event)">🌍 Map</button>
+            <button class="dock-btn" onclick="openModal(event, 'modal-timeseries')">📈 Time Series</button>
+            <button class="dock-btn" onclick="openModal(event, 'modal-experiments')">🧪 Experiments</button>
+            <button class="dock-btn" onclick="openModal(event, 'modal-clusters')">🗺️ Clusters</button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <!-- Time Series Modal -->
+    <div id="modal-timeseries" class="modal hidden">
+        <div class="modal-header">
+            <h2 style="display:flex; align-items:center; gap:0.5rem;">PM2.5 Time Series
+                <span class="tooltip-icon" style="font-size:1rem; font-weight:normal;" title="Graph isolated to Beijing PRSA stations due to historical dataset density availability.">ℹ️</span>
+            </h2>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <select id="ts-station-select" style="padding:0.3rem 0.5rem; background:rgba(0,0,0,0.5); color:white; border:1px solid #4b5563; border-radius:4px;" onchange="loadTimeSeries(this.value)">
+                    <option value="Aotizhongxin">Aotizhongxin</option>
+                    <option value="Changping">Changping</option>
+                    <option value="Dingling">Dingling</option>
+                    <option value="Dongsi">Dongsi</option>
+                    <option value="Guanyuan">Guanyuan</option>
+                    <option value="Gucheng">Gucheng</option>
+                    <option value="Huairou">Huairou</option>
+                    <option value="Nongzhanguan">Nongzhanguan</option>
+                </select>
+                <button class="close-btn" onclick="closeAllModals()">×</button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <p>Historical weekly PM2.5 averages across 4 years</p>
+            <canvas id="timeSeriesChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Experiments Modal -->
+    <div id="modal-experiments" class="modal hidden">
+        <div class="modal-header">
+            <h2>MLflow Experiment Tracking</h2>
+            <button class="close-btn" onclick="closeAllModals()">×</button>
+        </div>
+        <div class="modal-body">
+            <div id="experiment-grid" class="experiment-grid"></div>
+        </div>
+    </div>
+
+    <!-- Clusters Modal -->
+    <div id="modal-clusters" class="modal hidden">
+        <div class="modal-header">
+            <h2>Station Clustering (PCA & t-SNE)</h2>
+            <button class="close-btn" onclick="closeAllModals()">×</button>
+        </div>
+        <div class="modal-body" style="display:flex; gap:1rem; height:80%;">
+            <div style="flex:1; position:relative;"><canvas id="pcaChart"></canvas></div>
+            <div style="flex:1; position:relative;"><canvas id="tsneChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="app.js"></script>
+</body>
+</html>

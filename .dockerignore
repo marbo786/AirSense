@@ -1,0 +1,19 @@
+# Docker ignore — keeps image lean
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.git/
+.gitignore
+.github/
+*.md
+mlruns/
+mlartifacts/
+.prefect/
+htmlcov/
+.coverage
+datasets/
+!datasets/AQI and Lat Long of Countries.csv

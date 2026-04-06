@@ -1,0 +1,53 @@
+name: Train Models
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # allow manual trigger
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Prefect training pipeline
+        env:
+          DATASETS_PATH: datasets
+          ARTIFACTS_PATH: artifacts
+          MLFLOW_TRACKING_URI: mlruns
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python pipelines/training_flow.py
+
+      - name: Run DeepChecks ML tests
+        env:
+          DATASETS_PATH: datasets
+          ARTIFACTS_PATH: artifacts
+        run: |
+          pytest tests/test_deepchecks.py -v --tb=short --timeout=180
+
+      - name: Commit trained model artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add artifacts/
+          git add mlruns/ || true
+          git diff --staged --quiet || git commit -m "ci: retrain models [skip ci]"
+          git push

@@ -1,0 +1,19 @@
+# Trained model artifacts are stored here after running the pipeline.
+# This file ensures the artifacts/ directory is tracked by git.
+
+# Files saved here after training:
+# - classifier.joblib
+# - classifier_scaler.joblib
+# - classifier_features.joblib
+# - regressor.joblib
+# - regressor_scaler.joblib
+# - regressor_features.joblib
+# - clusterer.joblib
+# - clusterer_scaler.joblib
+# - clusterer_features.joblib
+# - forecaster.pkl
+# - forecaster_type.txt
+# - recommendation_profile.joblib
+# - station_clusters.csv
+# - projections.csv
+# - training_summary.json

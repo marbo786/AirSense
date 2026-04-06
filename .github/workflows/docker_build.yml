@@ -1,0 +1,40 @@
+name: Docker Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: app
+          push: false        # Set to true + add docker/login-action to push to registry
+          tags: |
+            airsense:latest
+            airsense:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test container
+        run: |
+          docker run -d --name airsense-test \
+            -e ARTIFACTS_PATH=artifacts \
+            -e MLFLOW_TRACKING_URI=mlruns \
+            -p 8000:8000 \
+            airsense:latest
+          sleep 15
+          curl -f http://localhost:8000/health || (docker logs airsense-test && exit 1)
+          docker stop airsense-test

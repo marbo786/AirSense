@@ -129,7 +129,6 @@ document.getElementById('predict-form').addEventListener('submit', async (e) => 
         
         const color = colorMap[data.aqi_category] || '#fff';
         resCat.style.color = color;
-        resExtColor = color.replace(')', ', 0.1)').replace('rgb', 'rgba');
         resCat.style.background = `rgba(255,255,255,0.1)`;
 
         resBox.style.display = 'block';

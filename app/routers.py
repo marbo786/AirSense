@@ -7,7 +7,6 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -214,8 +213,6 @@ def forecast_timeseries(req: ForecastRequest):
     horizon = req.horizon
     try:
         if forecaster_type == "Prophet":
-            import pandas as pd
-
             future = forecaster.make_future_dataframe(periods=horizon, freq="h")
             preds = forecaster.predict(future).tail(horizon)[
                 ["ds", "yhat", "yhat_lower", "yhat_upper"]

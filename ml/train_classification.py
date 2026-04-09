@@ -12,12 +12,10 @@ import joblib
 import mlflow
 import mlflow.sklearn
 import mlflow.xgboost
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
-    classification_report,
     f1_score,
 )
 from sklearn.model_selection import train_test_split

@@ -9,7 +9,6 @@ from pathlib import Path
 
 import joblib
 import mlflow
-import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.metrics import calinski_harabasz_score, silhouette_score

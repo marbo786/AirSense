@@ -211,9 +211,7 @@ class TestModelPerformance:
     def test_deepchecks_model_performance(self, train_test_split_data):
         """Run DeepChecks model performance suite on the regressor."""
         try:
-            from deepchecks.tabular import Dataset
             from deepchecks.tabular.checks import RegressionErrorDistribution
-            from deepchecks.tabular.suites import model_evaluation
 
             path = ARTIFACTS_PATH / "regressor.joblib"
             if not path.exists():

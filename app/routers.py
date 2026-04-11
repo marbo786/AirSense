@@ -6,6 +6,7 @@ import io
 import json
 import logging
 import os
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -33,6 +34,7 @@ from app.schemas import (
     RecommendResponse,
     TimeSeriesResponse,
 )
+from data.ingest import PRSA_STATIONS
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +56,60 @@ CLUSTER_DESC = {
     3: "Heavy-traffic hotspot",
     4: "Seasonal pollution zone",
 }
+
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", 5 * 1024 * 1024))
+MAX_UPLOAD_ROWS = int(os.getenv("MAX_UPLOAD_ROWS", 10000))
+ALLOWED_STATIONS = set(PRSA_STATIONS)
+
+
+@lru_cache(maxsize=1)
+def _global_map_nodes() -> list[dict]:
+    df = pd.read_csv("datasets/AQI and Lat Long of Countries.csv").fillna(0)
+    return [
+        {
+            "city": str(row.get("City", "Unknown")),
+            "country": str(row.get("Country", "Unknown")),
+            "lat": float(row.get("lat", 0.0)),
+            "lng": float(row.get("lng", 0.0)),
+            "aqi_value": float(row.get("AQI Value", 0.0)),
+            "aqi_category": str(row.get("AQI Category", "Unknown")),
+        }
+        for _, row in df.iterrows()
+    ]
+
+
+@lru_cache(maxsize=1)
+def _projection_points() -> list[ProjectionPoint]:
+    path = ARTIFACTS / "projections.csv"
+    if not path.exists():
+        return []
+    df = pd.read_csv(path).fillna(0)
+    points = [
+        ProjectionPoint(
+            pca_x=float(row.get("pca_x", 0)),
+            pca_y=float(row.get("pca_y", 0)),
+            tsne_x=float(row.get("tsne_x", 0)),
+            tsne_y=float(row.get("tsne_y", 0)),
+            aqi_category=str(row.get("aqi_category", "Unknown")),
+            station=str(row.get("station", "Unknown")),
+        )
+        for _, row in df.iterrows()
+    ]
+    return points
+
+
+@lru_cache(maxsize=16)
+def _weekly_station_series(station: str) -> tuple[list[str], list[float]]:
+    path = f"datasets/PRSA_Data_{station}_20130301-20170228.csv"
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+    df = pd.read_csv(path)
+    df["datetime"] = pd.to_datetime(df[["year", "month", "day", "hour"]])
+    ts = df.set_index("datetime")["PM2.5"].clip(lower=0)
+    weekly = ts.resample("W").mean().fillna(0)
+    dates = [d.strftime("%Y-%m-%d") for d in weekly.index]
+    values = [round(float(v), 2) for v in weekly.values]
+    return dates, values
 
 
 def _pm25_to_category(pm25: float) -> str:
@@ -131,23 +187,7 @@ def predict_aqi_category(req: AQIClassifyRequest):
 @predict_router.get("/map-global", response_model=GlobalMapResponse)
 def get_global_map():
     try:
-        df = pd.read_csv("datasets/AQI and Lat Long of Countries.csv")
-        # Ensure we don't return nan
-        df = df.fillna(0)
-
-        nodes = []
-        for _, row in df.iterrows():
-            nodes.append(
-                {
-                    "city": str(row.get("City", "Unknown")),
-                    "country": str(row.get("Country", "Unknown")),
-                    "lat": float(row.get("lat", 0.0)),
-                    "lng": float(row.get("lng", 0.0)),
-                    "aqi_value": float(row.get("AQI Value", 0.0)),
-                    "aqi_category": str(row.get("AQI Category", "Unknown")),
-                }
-            )
-        return GlobalMapResponse(nodes=nodes)
+        return GlobalMapResponse(nodes=_global_map_nodes())
     except Exception as e:
         logger.error(f"Failed to load map data: {e}")
         raise HTTPException(500, f"Error loading map data: {e}")
@@ -304,11 +344,19 @@ async def batch_predict_csv(file: UploadFile = File(...)):
     if reg is None:
         raise HTTPException(503, "Regressor not loaded.")
 
+    if file.content_type not in {"text/csv", "application/vnd.ms-excel"}:
+        raise HTTPException(400, "Invalid content type. Please upload a CSV file.")
+
     content = await file.read()
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"CSV too large. Max size is {MAX_UPLOAD_BYTES} bytes.")
+
     try:
         df = pd.read_csv(io.BytesIO(content))
     except Exception as e:
         raise HTTPException(400, f"Could not parse CSV: {e}")
+    if len(df) > MAX_UPLOAD_ROWS:
+        raise HTTPException(413, f"CSV has too many rows. Max rows: {MAX_UPLOAD_ROWS}.")
 
     available = [f for f in features if f in df.columns]
     if not available:
@@ -368,23 +416,8 @@ def get_experiments():
 
 @metrics_router.get("/projections", response_model=ProjectionsResponse)
 def get_projections():
-    path = ARTIFACTS / "projections.csv"
-    if not path.exists():
-        return ProjectionsResponse(points=[])
     try:
-        df = pd.read_csv(path).fillna(0)
-        points = []
-        for _, row in df.iterrows():
-            points.append(
-                ProjectionPoint(
-                    pca_x=float(row.get("pca_x", 0)),
-                    pca_y=float(row.get("pca_y", 0)),
-                    tsne_x=float(row.get("tsne_x", 0)),
-                    tsne_y=float(row.get("tsne_y", 0)),
-                    aqi_category=str(row.get("aqi_category", "Unknown")),
-                    station=str(row.get("station", "Unknown")),
-                )
-            )
+        points = _projection_points()
         # Limiting to 2500 max for UI performance
         if len(points) > 2500:
             import random
@@ -401,19 +434,13 @@ def get_time_series(station: str = "Aotizhongxin"):
     """Fetch resampled weekly averages for a historical PRSA station."""
     # Since downloading 45000 hours to JS is massive, we resample to Weekly
     # In a full prod system we'd use a timeseries DB, but we read the csv here
-    path = f"datasets/PRSA_Data_{station}_20130301-20170228.csv"
-    if not os.path.exists(path):
-        raise HTTPException(404, f"Dataset for {station} not found.")
+    if station not in ALLOWED_STATIONS:
+        raise HTTPException(400, f"Invalid station. Must be one of: {sorted(ALLOWED_STATIONS)}")
 
     try:
-        df = pd.read_csv(path)
-        df["datetime"] = pd.to_datetime(df[["year", "month", "day", "hour"]])
-        ts = df.set_index("datetime")["PM2.5"].clip(lower=0)
-        # Resample to weekly mean
-        weekly = ts.resample("W").mean().fillna(0)
-
-        dates = [d.strftime("%Y-%m-%d") for d in weekly.index]
-        values = [round(float(v), 2) for v in weekly.values]
+        dates, values = _weekly_station_series(station)
         return TimeSeriesResponse(dates=dates, values=values, station=station)
+    except FileNotFoundError:
+        raise HTTPException(404, f"Dataset for {station} not found.")
     except Exception as e:
         raise HTTPException(500, f"Error processing time-series: {e}")

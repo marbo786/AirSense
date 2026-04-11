@@ -40,6 +40,7 @@ def _cors_origins() -> list[str]:
     origins = [o.strip() for o in raw.split(",") if o.strip()]
     return origins or ["http://localhost:8080"]
 
+
 # ── MLflow config ─────────────────────────────────────────────────────────────
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "mlruns"))
 

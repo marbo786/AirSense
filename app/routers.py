@@ -14,7 +14,6 @@ import pandas as pd
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
 from app import model_store
-from data.ingest import PRSA_STATIONS
 from app.schemas import (
     AQIClassifyRequest,
     AQIClassifyResponse,
@@ -35,6 +34,7 @@ from app.schemas import (
     RecommendResponse,
     TimeSeriesResponse,
 )
+from data.ingest import PRSA_STATIONS
 
 logger = logging.getLogger(__name__)
 

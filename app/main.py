@@ -34,6 +34,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger("airsense")
 
+
+def _cors_origins() -> list[str]:
+    raw = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:8080,http://localhost:3000")
+    origins = [o.strip() for o in raw.split(",") if o.strip()]
+    return origins or ["http://localhost:8080"]
+
 # ── MLflow config ─────────────────────────────────────────────────────────────
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "mlruns"))
 
@@ -67,9 +73,9 @@ app = FastAPI(
 app.add_middleware(LoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_cors_origins(),
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────

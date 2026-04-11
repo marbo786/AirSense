@@ -117,6 +117,13 @@ class TestRecommendEndpoint:
 
 
 class TestUploadEndpoint:
+    def test_csv_upload_rejects_non_csv_content_type(self):
+        response = client.post(
+            "/upload/csv",
+            files={"file": ("test.txt", b"hello", "text/plain")},
+        )
+        assert response.status_code in [400, 503]
+
     def test_csv_upload_invalid_file(self):
         """Invalid (empty) CSV should return 400."""
         response = client.post(
@@ -141,3 +148,9 @@ class TestUploadEndpoint:
             data = response.json()
             assert "rows_processed" in data
             assert data["rows_processed"] == 2
+
+
+class TestMetricsEndpoint:
+    def test_time_series_rejects_invalid_station(self):
+        response = client.get("/metrics/time-series?station=../../etc/passwd")
+        assert response.status_code == 400

@@ -45,6 +45,11 @@ def run(station_profile: pd.DataFrame) -> dict:
         if score > best_km_score:
             best_k, best_km, best_km_score = k, km, score
 
+    if best_km is None:
+        best_km = KMeans(n_clusters=3, random_state=42, n_init=10).fit(X_scaled)
+        best_k = 3
+        best_km_score = -1.0
+
     with mlflow.start_run(run_name=f"KMeans_k{best_k}"):
         km_labels = best_km.labels_
         ch_score = calinski_harabasz_score(X_scaled, km_labels)

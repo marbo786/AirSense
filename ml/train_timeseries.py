@@ -85,6 +85,10 @@ def run(df: pd.DataFrame) -> dict:
     """Run time series experiments. Returns best model info."""
     mlflow.set_experiment("PM25_TimeSeries")
     ts = prepare_ts_data(df)
+    if len(ts) < (FORECAST_HORIZON * 2):
+        raise RuntimeError(
+            f"Insufficient time-series points ({len(ts)}). Need at least {FORECAST_HORIZON * 2}."
+        )
     results = {}
 
     # Prophet

@@ -55,6 +55,9 @@ TARGET_COL = "AQI_Label"
 def prepare_data(df: pd.DataFrame) -> tuple:
     """Extract features and labels, then split."""
     available = [c for c in FEATURE_COLS if c in df.columns]
+    missing = set(FEATURE_COLS) - set(available)
+    if missing:
+        logger.warning("Missing expected feature columns (will default to 0): %s", missing)
     X = df[available].fillna(0).values
     y = df[TARGET_COL].values
 
@@ -83,7 +86,6 @@ def train_xgboost(X_train, y_train, X_test, y_test) -> tuple[XGBClassifier, dict
         n_estimators=300,
         max_depth=8,
         learning_rate=0.05,
-        use_label_encoder=False,
         eval_metric="mlogloss",
         random_state=42,
         n_jobs=-1,

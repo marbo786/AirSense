@@ -56,6 +56,9 @@ async def lifespan(app: FastAPI):
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
+# Swagger/ReDoc are disabled by default. Set ENABLE_DOCS=true locally to enable.
+_docs_enabled = os.getenv("ENABLE_DOCS", "false").lower() == "true"
+
 app = FastAPI(
     title="AirSense — Air Quality Intelligence API",
     description=(
@@ -66,8 +69,8 @@ app = FastAPI(
     ),
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
 )
 
 # ── Middleware ─────────────────────────────────────────────────────────────────

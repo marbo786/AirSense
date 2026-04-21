@@ -10,6 +10,33 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
+# ── AQI category mapping ───────────────────────────────────────────────────────
+
+AQI_BREAKPOINTS = [
+    (12.0, "Good"),
+    (35.4, "Moderate"),
+    (55.4, "Unhealthy for Sensitive Groups"),
+    (150.4, "Unhealthy"),
+    (250.4, "Very Unhealthy"),
+]
+
+AQI_CATEGORY_MAP = {
+    "Good": 0,
+    "Moderate": 1,
+    "Unhealthy for Sensitive Groups": 2,
+    "Unhealthy": 3,
+    "Very Unhealthy": 4,
+    "Hazardous": 5,
+}
+
+
+def pm25_to_aqi_category(pm25: float) -> str:
+    """Convert a PM2.5 concentration (µg/m³) to a US EPA AQI category string."""
+    for threshold, label in AQI_BREAKPOINTS:
+        if pm25 <= threshold:
+            return label
+    return "Hazardous"
+
 
 def add_datetime_features(df: pd.DataFrame, dt_col: str = "datetime") -> pd.DataFrame:
     """Add cyclical hour/month/day-of-week features from a datetime column."""
@@ -77,32 +104,8 @@ def add_rolling_features(
 def assign_aqi_category_from_pm25(df: pd.DataFrame, pm25_col: str = "PM2.5") -> pd.DataFrame:
     """Derive AQI category label from PM2.5 values using US EPA breakpoints."""
     df = df.copy()
-
-    def _category(pm25: float) -> str:
-        if pm25 <= 12:
-            return "Good"
-        elif pm25 <= 35.4:
-            return "Moderate"
-        elif pm25 <= 55.4:
-            return "Unhealthy for Sensitive Groups"
-        elif pm25 <= 150.4:
-            return "Unhealthy"
-        elif pm25 <= 250.4:
-            return "Very Unhealthy"
-        else:
-            return "Hazardous"
-
-    df["AQI_Category"] = df[pm25_col].apply(_category)
-
-    category_map = {
-        "Good": 0,
-        "Moderate": 1,
-        "Unhealthy for Sensitive Groups": 2,
-        "Unhealthy": 3,
-        "Very Unhealthy": 4,
-        "Hazardous": 5,
-    }
-    df["AQI_Label"] = df["AQI_Category"].map(category_map)
+    df["AQI_Category"] = df[pm25_col].apply(pm25_to_aqi_category)
+    df["AQI_Label"] = df["AQI_Category"].map(AQI_CATEGORY_MAP)
     return df
 
 

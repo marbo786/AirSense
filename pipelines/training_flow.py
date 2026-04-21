@@ -13,12 +13,9 @@ from pathlib import Path
 # Add project root to path for Prefect tasks
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from datetime import timedelta
-
 import requests
 from dotenv import load_dotenv
 from prefect import flow, get_run_logger, task
-from prefect.tasks import task_input_hash
 
 load_dotenv()
 
@@ -58,8 +55,9 @@ def _discord_notify(message: str, color: int = 0x00FF00) -> None:
     name="Ingest Data",
     retries=2,
     retry_delay_seconds=30,
-    cache_key_fn=task_input_hash,
-    cache_expiration=timedelta(hours=1),
+    # persist_result=False: pass DataFrames in-memory instead of serialising
+    # them to the Prefect server (which causes 25+ min stalls on 420K rows).
+    persist_result=False,
 )
 def ingest_data():
     logger = get_run_logger()
@@ -70,7 +68,7 @@ def ingest_data():
     return datasets
 
 
-@task(name="Preprocess Data", retries=2, retry_delay_seconds=30)
+@task(name="Preprocess Data", retries=2, retry_delay_seconds=30, persist_result=False)
 def preprocess_data(datasets: dict):
     logger = get_run_logger()
     from data.preprocess import preprocess_global_aqi, preprocess_prsa, preprocess_uci
@@ -84,7 +82,7 @@ def preprocess_data(datasets: dict):
     return {"prsa": prsa, "global_aqi": global_aqi, "uci": uci}
 
 
-@task(name="Feature Engineering", retries=2, retry_delay_seconds=30)
+@task(name="Feature Engineering", retries=2, retry_delay_seconds=30, persist_result=False)
 def feature_engineering(preprocessed: dict):
     logger = get_run_logger()
     from data.feature_engineering import build_prsa_features, build_station_profile
@@ -101,7 +99,7 @@ def feature_engineering(preprocessed: dict):
     }
 
 
-@task(name="Train Classification", retries=1, retry_delay_seconds=60)
+@task(name="Train Classification", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_classification(engineered: dict):
     logger = get_run_logger()
     from ml.train_classification import run
@@ -113,7 +111,7 @@ def train_classification(engineered: dict):
     return result
 
 
-@task(name="Train Regression", retries=1, retry_delay_seconds=60)
+@task(name="Train Regression", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_regression(engineered: dict):
     logger = get_run_logger()
     from ml.train_regression import run
@@ -125,7 +123,7 @@ def train_regression(engineered: dict):
     return result
 
 
-@task(name="Train Time Series", retries=1, retry_delay_seconds=60)
+@task(name="Train Time Series", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_timeseries(engineered: dict):
     logger = get_run_logger()
     from ml.train_timeseries import run
@@ -137,7 +135,7 @@ def train_timeseries(engineered: dict):
     return result
 
 
-@task(name="Train Clustering", retries=1, retry_delay_seconds=60)
+@task(name="Train Clustering", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_clustering(engineered: dict):
     logger = get_run_logger()
     from ml.train_clustering import run
@@ -147,7 +145,7 @@ def train_clustering(engineered: dict):
     return result
 
 
-@task(name="Train Dimensionality Reduction", retries=1, retry_delay_seconds=60)
+@task(name="Train Dimensionality Reduction", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_dimensionality(engineered: dict):
     logger = get_run_logger()
     from ml.train_dimensionality import run
@@ -157,7 +155,7 @@ def train_dimensionality(engineered: dict):
     return result
 
 
-@task(name="Train Recommendation", retries=1, retry_delay_seconds=60)
+@task(name="Train Recommendation", retries=1, retry_delay_seconds=60, persist_result=False)
 def train_recommendation(engineered: dict):
     logger = get_run_logger()
     from ml.train_recommendation import run
@@ -167,7 +165,7 @@ def train_recommendation(engineered: dict):
     return result
 
 
-@task(name="Save Summary", retries=2, retry_delay_seconds=10)
+@task(name="Save Summary", retries=2, retry_delay_seconds=10, persist_result=False)
 def save_summary(clf_result, reg_result, ts_result, clust_result):
     logger = get_run_logger()
     summary = {

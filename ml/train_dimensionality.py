@@ -52,7 +52,7 @@ def run(df: pd.DataFrame) -> dict:
 
     # PCA — keep components explaining 95% variance
     with mlflow.start_run(run_name="PCA"):
-        pca = PCA(n_components=0.95, random_state=42)
+        pca = PCA(n_components=0.95)
         pca.fit_transform(X_scaled)
         explained = float(np.sum(pca.explained_variance_ratio_))
         mlflow.log_params({"n_components": "95%_variance"})
@@ -65,7 +65,7 @@ def run(df: pd.DataFrame) -> dict:
         logger.info("PCA: %d components — %.1f%% variance", pca.n_components_, explained * 100)
 
         # Also save 2D for visualisation
-        pca2d = PCA(n_components=2, random_state=42)
+        pca2d = PCA(n_components=2)
         X_pca2d = pca2d.fit_transform(X_scaled)
         joblib.dump(pca, ARTIFACTS_PATH / "pca.joblib")
         joblib.dump(pca2d, ARTIFACTS_PATH / "pca2d.joblib")

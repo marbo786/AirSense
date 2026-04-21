@@ -18,6 +18,12 @@ statsmodels
 joblib
 
 # ── MLflow ────────────────────────────────────────────────────────────────────
+# ⚠️  DO NOT UPGRADE without migrating mlruns metadata first.
+#     MLflow >= 2.x requires a `run_uuid` field in every run's meta.yaml.
+#     Runs logged with older MLflow versions lack this field and will cause:
+#       TypeError: RunInfo.__init__() missing 1 required positional argument: 'run_uuid'
+#     To upgrade: add `run_uuid: <run_id>` to all mlruns/**/meta.yaml files
+#     (excluding mlruns/**/models/**/meta.yaml) before bumping this version.
 mlflow==2.10.2
 
 # ── Prefect ───────────────────────────────────────────────────────────────────

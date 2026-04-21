@@ -34,6 +34,7 @@ from app.schemas import (
     RecommendResponse,
     TimeSeriesResponse,
 )
+from data.feature_engineering import pm25_to_aqi_category
 from data.ingest import PRSA_STATIONS
 
 logger = logging.getLogger(__name__)
@@ -112,20 +113,6 @@ def _weekly_station_series(station: str) -> tuple[list[str], list[float]]:
     return dates, values
 
 
-def _pm25_to_category(pm25: float) -> str:
-    if pm25 <= 12:
-        return "Good"
-    if pm25 <= 35.4:
-        return "Moderate"
-    if pm25 <= 55.4:
-        return "Unhealthy for Sensitive Groups"
-    if pm25 <= 150.4:
-        return "Unhealthy"
-    if pm25 <= 250.4:
-        return "Very Unhealthy"
-    return "Hazardous"
-
-
 # ── Health ─────────────────────────────────────────────────────────────────────
 
 health_router = APIRouter(tags=["Health"])
@@ -189,7 +176,7 @@ def get_global_map():
     try:
         return GlobalMapResponse(nodes=_global_map_nodes())
     except Exception as e:
-        logger.error(f"Failed to load map data: {e}")
+        logger.error("Failed to load map data: %s", e)
         raise HTTPException(500, f"Error loading map data: {e}")
 
 
@@ -234,7 +221,7 @@ def predict_pm25(req: PM25Request):
     pm25 = float(max(0, reg.predict(X)[0]))
     return PM25Response(
         pm25_predicted=round(pm25, 2),
-        aqi_category=_pm25_to_category(pm25),
+        aqi_category=pm25_to_aqi_category(pm25),
     )
 
 
@@ -379,7 +366,7 @@ async def batch_predict_csv(file: UploadFile = File(...)):
         {
             "row": i,
             "pm25_predicted": round(max(0, float(p)), 2),
-            "aqi_category": _pm25_to_category(float(p)),
+            "aqi_category": pm25_to_aqi_category(float(p)),
         }
         for i, p in enumerate(preds)
     ]
@@ -410,7 +397,7 @@ def get_experiments():
             )
         return ExperimentsResponse(experiments=summaries)
     except Exception as e:
-        logger.error(f"Failed to read experiments: {e}")
+        logger.error("Failed to read experiments: %s", e)
         raise HTTPException(500, str(e))
 
 
@@ -425,7 +412,7 @@ def get_projections():
             points = random.sample(points, 2500)
         return ProjectionsResponse(points=points)
     except Exception as e:
-        logger.error(f"Failed to read projections: {e}")
+        logger.error("Failed to read projections: %s", e)
         raise HTTPException(500, str(e))
 
 
@@ -444,3 +431,4 @@ def get_time_series(station: str = "Aotizhongxin"):
         raise HTTPException(404, f"Dataset for {station} not found.")
     except Exception as e:
         raise HTTPException(500, f"Error processing time-series: {e}")
+

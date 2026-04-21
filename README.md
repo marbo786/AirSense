@@ -2,7 +2,35 @@
 
 > **AI221 MLOps Project** | Domain: Earth & Environmental Intelligence
 
-A production-grade ML system that predicts, forecasts, and analyses Beijing air quality data using a fully automated MLOps pipeline.
+A production-grade ML system that predicts, forecasts, and analyses Beijing air quality data using a fully automated MLOps pipeline — 6 ML models, 4 Docker services, CI/CD, and a live glassmorphism dashboard.
+
+---
+
+## 🏗️ Architecture
+
+```
+Raw CSV Data (420K rows, 12 Beijing stations)
+        │
+        ▼
+┌─────────────────────────┐
+│  Prefect  (port 4200)   │  ← Orchestrates: ingest → preprocess → train → notify
+└───────────┬─────────────┘
+            │  tracks every experiment
+            ▼
+┌─────────────────────────┐
+│  MLflow   (port 5000)   │  ← Logs params, metrics, model artifacts per run
+└───────────┬─────────────┘
+            │  saves .joblib / .pkl to artifacts/
+            ▼
+┌─────────────────────────┐
+│  FastAPI  (port 8000)   │  ← REST API — loads all models at startup
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│  Frontend (port 8080)   │  ← Glassmorphism SPA — all charts call the API live
+└─────────────────────────┘
+```
 
 ---
 
@@ -12,128 +40,126 @@ A production-grade ML system that predicts, forecasts, and analyses Beijing air 
 ```
 ML-PROJ/
 ├── app/                    # FastAPI application
-│   ├── main.py             # App entry point + lifespan
-│   ├── routers.py          # All endpoint route handlers
+│   ├── main.py             # Entry point + lifespan model loading
+│   ├── routers.py          # All API endpoint handlers
 │   ├── schemas.py          # Pydantic request/response models
-│   ├── model_store.py      # Artifact loading cache
+│   ├── model_store.py      # Artifact loading cache (loaded at startup)
 │   └── middleware.py       # Request logging middleware
-├── ml/                     # ML training scripts
-│   ├── train_classification.py   # XGBoost + Random Forest (AQI category)
-│   ├── train_regression.py       # GBM + RF + Ridge (PM2.5)
-│   ├── train_timeseries.py       # Prophet + ARIMA (24h forecast)
-│   ├── train_clustering.py       # K-Means + DBSCAN (station profiles)
-│   ├── train_dimensionality.py   # PCA + t-SNE
-│   └── train_recommendation.py   # Activity window recommendation
+├── ml/                     # ML training scripts (one per task)
+│   ├── train_classification.py   # XGBoost + Random Forest → AQI category
+│   ├── train_regression.py       # GBM + RF + Ridge → PM2.5 µg/m³
+│   ├── train_timeseries.py       # Prophet + ARIMA → 24h forecast
+│   ├── train_clustering.py       # K-Means + DBSCAN → station profiles
+│   ├── train_dimensionality.py   # PCA + t-SNE → 2D projections
+│   └── train_recommendation.py   # Content-based activity window recommendation
 ├── data/                   # Data pipeline modules
-│   ├── ingest.py           # Dataset loaders
+│   ├── ingest.py           # Dataset loaders (PRSA, GlobalAQI, UCI)
 │   ├── preprocess.py       # Cleaning, imputation, encoding
-│   └── feature_engineering.py  # Lag/rolling features, AQI labels
+│   └── feature_engineering.py  # Lag/rolling features, AQI labels, shared utils
 ├── pipelines/
-│   └── training_flow.py    # Prefect orchestration flow
-├── tests/                  # Pytest + DeepChecks
-│   ├── test_data.py
-│   ├── test_api.py
-│   ├── test_models.py
-│   └── test_deepchecks.py
-├── frontend/               # Vanilla JS/CSS AirSense Glassmorphism UI
-│   ├── index.html          # Main SPA layout with macOS Dock
-│   ├── style.css           # Premium styling with Backdrop filters
-│   └── app.js              # Native Chart.js rendering and REST API callers
-├── datasets/               # Raw CSV files
-├── artifacts/              # Saved models + evaluation outputs
-├── .github/workflows/      # CI/CD pipelines
-├── Dockerfile              # Multi-stage container
+│   └── training_flow.py    # Prefect orchestration flow (persist_result=False)
+├── tests/                  # Pytest + DeepChecks test suites
+├── frontend/               # Vanilla JS/CSS glassmorphism SPA (served by NGINX)
+├── datasets/               # Raw CSV files (not committed)
+├── artifacts/              # Saved model .joblib/.pkl files
+├── .github/workflows/      # CI/CD: lint, test, train, docker_build
+├── Dockerfile              # Multi-stage build (deps → app)
 ├── docker-compose.yml      # 4-service orchestration
 └── requirements.txt
 ```
 
 ---
 
-## 🧠 ML Tasks
+## 🧠 ML Tasks & Results
 
-| Task | Models | Endpoint |
-|---|---|---|
-| **Classification** | XGBoost, Random Forest | `POST /predict/aqi-category` |
-| **Regression** | Gradient Boosting, RF, Ridge | `POST /predict/pm25` |
-| **Time Series** | Prophet, ARIMA | `POST /forecast/timeseries` |
-| **Clustering** | K-Means, DBSCAN | `POST /cluster/station` |
-| **Dim. Reduction** | PCA, t-SNE | Used in dashboard visualisations |
-| **Recommendation** | Content-based filtering | `POST /recommend/activity-window` |
+| Task | Models Compared | Winner | Key Metric |
+|---|---|---|---|
+| **Classification** | XGBoost, Random Forest | XGBoost | F1=0.862, Acc=0.866 |
+| **Regression** | GBM, Random Forest, Ridge | GBM | RMSE=13.15, R²≈0.95 |
+| **Time Series** | Prophet, ARIMA | ARIMA | RMSE=68.65 |
+| **Clustering** | K-Means (k=3–5), DBSCAN | K-Means | Best silhouette score |
+| **Dim. Reduction** | PCA (95% var), t-SNE | — | Used for dashboard viz |
+| **Recommendation** | Content-based filtering | — | `POST /recommend/activity-window` |
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Setup environment
+### Prerequisites
+- Docker Desktop running
+- Python 3.10+
+
+### 1. Clone & configure
 
 ```bash
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env — add your Discord webhook URL
+git clone <repo-url>
+cd ML-PROJ
+cp .env.example .env   # add your Discord webhook URL if desired
 ```
 
-### 2. Train models (Prefect pipeline)
+### 2. Start all services
 
 ```bash
-python pipelines/training_flow.py
-```
-
-### 3. Start FastAPI
-
-```bash
-uvicorn app.main:app --reload
-# Swagger UI → http://localhost:8000/docs
-```
-
-### 4. Start NGINX Frontend
-
-```bash
-docker compose up -d frontend
-# Dashboard → http://localhost:8080
-```
-
-### 5. Docker Compose (all services)
-
-```bash
-docker compose up --build
+docker compose up -d
 ```
 
 | Service | URL |
 |---|---|
-| FastAPI | http://localhost:8000/docs |
-| MLflow | http://localhost:5000 |
-| Prefect | http://localhost:4200 |
-| Frontend | http://localhost:8080 |
+| Frontend Dashboard | http://localhost:8080 |
+| FastAPI (health check) | http://localhost:8000/health |
+| MLflow Tracking | http://localhost:5000 |
+| Prefect Orchestration | http://localhost:4200 |
+
+> **Note:** Swagger/ReDoc (`/docs`) is disabled by default. Set `ENABLE_DOCS=true` in `.env` and restart `airsense-api` to enable it locally.
+
+### 3. Train models (local, fast)
+
+```bash
+# Requires: pip install -r requirements.txt
+python pipelines/training_flow.py
+```
+
+Expected total runtime: ~15 minutes on a modern CPU.
+
+> **Important:** The pipeline uses `PREFECT_API_URL=http://localhost:4200/api` from `.env` to report runs to the Docker Prefect UI. All tasks use `persist_result=False` so DataFrames are passed in-memory — this keeps training fast while still showing the full run in the Prefect UI at port 4200.
+
+### 4. Restart the API to load new models
+
+```bash
+docker compose restart api
+```
 
 ---
 
 ## 🧪 Running Tests
 
 ```bash
-# Unit + integration tests
-pytest tests/test_data.py tests/test_api.py tests/test_models.py -v
+# Unit + integration tests (fast, no trained models needed)
+pytest tests/test_data.py tests/test_api.py tests/test_models.py -v --tb=short
 
-# DeepChecks ML tests (requires trained models)
-pytest tests/test_deepchecks.py -v
+# ML quality tests with DeepChecks (requires trained models in artifacts/)
+pytest tests/test_deepchecks.py -v --tb=short --timeout=180
 
 # Lint
-ruff check .
+python -m ruff check .
 ```
 
 ---
 
 ## ⚙️ CI/CD Pipelines
 
-| Workflow | Trigger | Purpose |
+| Workflow | Trigger | What it does |
 |---|---|---|
-| `lint.yml` | Every push | ruff code quality |
-| `test.yml` | Every push | pytest unit + integration |
-| `train.yml` | Push to `main` | Retrain models + DeepChecks |
-| `docker_build.yml` | Push to `main` | Build + smoke test Docker image |
+| `lint.yml` | Every push | `ruff check` — fails on any lint error |
+| `test.yml` | Every push / PR to main | pytest unit + integration tests |
+| `train.yml` | Push to `main` | Full pipeline retrain + DeepChecks + commit artifacts |
+| `docker_build.yml` | Push to `main` | Build Docker image + smoke test |
 
-### GitHub Secret Required
+### Required GitHub Secrets
 
-Add `DISCORD_WEBHOOK_URL` in **Settings → Secrets → Actions** for Discord notifications.
+| Secret | Purpose |
+|---|---|
+| `DISCORD_WEBHOOK_URL` | Pipeline completion / failure notifications |
 
 ---
 
@@ -141,20 +167,25 @@ Add `DISCORD_WEBHOOK_URL` in **Settings → Secrets → Actions** for Discord no
 
 | Dataset | Rows | Usage |
 |---|---|---|
-| PRSA Beijing (12 stations) | ~420K | Primary training data |
-| Global AQI + Lat/Long | ~23K | Classification + map viz |
-| UCI Air Quality | ~9K | Secondary experiments |
+| PRSA Beijing (12 stations) | ~420K hourly | Primary training data (2013–2017) |
+| Global AQI + Lat/Long | ~23K cities | Global map visualisation |
+| UCI Air Quality | ~9K hourly | Secondary experiments |
 
 ---
 
-## 🏗️ Architecture
+## 🔧 Key Configuration
 
-```
-Datasets → Prefect Pipeline → MLflow Tracking → Artifacts
-                                                    ↓
-                             FastAPI ← model_store.py
-                                ↓
-                        Vanilla JS NGINX SPA
-                        GitHub Actions CI/CD
-                        Docker Compose
-```
+All configuration is via environment variables (`.env`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `MLFLOW_TRACKING_URI` | `mlruns` | MLflow backend (file store) |
+| `PREFECT_API_URL` | `http://localhost:4200/api` | Prefect server for local runs |
+| `ARTIFACTS_PATH` | `artifacts` | Where trained models are saved |
+| `DATASETS_PATH` | `datasets` | Raw CSV location |
+| `ENABLE_DOCS` | `false` | Enable Swagger UI at `/docs` |
+| `DISCORD_WEBHOOK_URL` | — | Discord notification on pipeline complete/fail |
+
+### MLflow Version Notice
+
+MLflow is pinned to `==2.10.2` in `requirements.txt`. **Do not upgrade** without first adding `run_uuid: <run_id>` to all `mlruns/**/meta.yaml` files (excluding `models/`). See the comment in `requirements.txt` for details.

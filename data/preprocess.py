@@ -30,11 +30,7 @@ def preprocess_prsa(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # Build datetime index
-    df["datetime"] = pd.to_datetime(
-        df[["year", "month", "day", "hour"]].rename(
-            columns={"year": "year", "month": "month", "day": "day", "hour": "hour"}
-        )
-    )
+    df["datetime"] = pd.to_datetime(df[["year", "month", "day", "hour"]])
     df = df.sort_values(["station", "datetime"]).reset_index(drop=True)
 
     # Impute numeric columns with per-station forward-fill then median

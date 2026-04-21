@@ -25,6 +25,22 @@ ARTIFACTS_PATH.mkdir(exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
+# Suppress verbose library loggers — Prefect captures ALL Python logging and
+# ships it to the server via HTTP. These libraries emit dozens of INFO lines
+# per mlflow.log_model() call which adds significant network overhead.
+for _noisy_logger in [
+    "mlflow",
+    "mlflow.tracking",
+    "mlflow.store",
+    "urllib3",
+    "httpx",
+    "httpcore",
+    "prophet",
+    "cmdstanpy",
+    "numexpr",
+]:
+    logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
+
 
 # ── Notification ───────────────────────────────────────────────────────────────
 

@@ -145,7 +145,9 @@ def train_clustering(engineered: dict):
     return result
 
 
-@task(name="Train Dimensionality Reduction", retries=1, retry_delay_seconds=60, persist_result=False)
+@task(
+    name="Train Dimensionality Reduction", retries=1, retry_delay_seconds=60, persist_result=False
+)
 def train_dimensionality(engineered: dict):
     logger = get_run_logger()
     from ml.train_dimensionality import run

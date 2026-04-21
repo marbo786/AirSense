@@ -431,4 +431,3 @@ def get_time_series(station: str = "Aotizhongxin"):
         raise HTTPException(404, f"Dataset for {station} not found.")
     except Exception as e:
         raise HTTPException(500, f"Error processing time-series: {e}")
-

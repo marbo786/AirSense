@@ -42,6 +42,38 @@ for _noisy_logger in [
     logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
 
 
+# ── MLflow meta.yaml patch ─────────────────────────────────────────────────────
+
+
+def _patch_mlflow_run_uuid() -> int:
+    """
+    Fix missing run_uuid fields in mlruns meta.yaml files.
+
+    MLflow 2.10.2 requires run_uuid in every run's meta.yaml but the
+    file-store backend it writes during training omits it, causing
+    'TypeError: RunInfo.__init__() missing 1 required positional argument: run_uuid'
+    in the MLflow UI. Run this after every training pipeline to stay clean.
+    """
+    import re
+
+    mlruns = Path(os.getenv("MLFLOW_TRACKING_URI", "mlruns"))
+    if not mlruns.exists():
+        return 0
+    fixed = 0
+    for meta in mlruns.rglob("meta.yaml"):
+        if "models" in meta.parts:
+            continue  # model meta files have a different schema
+        content = meta.read_text(encoding="utf-8")
+        if "run_id:" in content and "run_uuid:" not in content:
+            match = re.search(r"run_id:\s*(\S+)", content)
+            if match:
+                run_id = match.group(1)
+                content = content.replace(match.group(0), f"{match.group(0)}\nrun_uuid: {run_id}")
+                meta.write_text(content, encoding="utf-8")
+                fixed += 1
+    return fixed
+
+
 # ── Notification ───────────────────────────────────────────────────────────────
 
 
@@ -251,7 +283,10 @@ def training_pipeline():
             f"**Clustering** → {clust_result['best_model']}"
         )
         _discord_notify(msg, color=0x00FF00)
-        logger.info("✅ Pipeline complete.")
+
+        # Patch mlruns meta.yaml files so MLflow UI doesn't break after retraining
+        n = _patch_mlflow_run_uuid()
+        logger.info("✅ Pipeline complete. Patched %d mlruns meta.yaml files.", n)
 
     except Exception as e:
         _discord_notify(f"❌ **Pipeline FAILED!**\n\n`{e}`", color=0xFF0000)

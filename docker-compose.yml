@@ -65,6 +65,8 @@ services:
     container_name: airsense-frontend
     ports:
       - "8080:80"
+    environment:
+      - MAPBOX_TOKEN=${MAPBOX_TOKEN}
     depends_on:
       - api
     networks:

@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirSense | World Map Intelligence</title>
+    <title>AirSense | Globe Intelligence</title>
+    <meta name="description" content="Live air quality intelligence — global AQI map, PM2.5 forecasting, and ML-powered outdoor safety recommendations.">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Mapbox GL JS v3 -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Hover tooltip (shown on AQI dot hover) -->
+    <div id="map-tooltip" class="map-tooltip hidden"></div>
 
     <!-- Floating Glass Sidebar -->
     <aside class="glass-sidebar">
@@ -23,6 +29,15 @@
             </div>
             <p>Live Air Quality Intelligence</p>
         </header>
+
+        <!-- Geocoding search bar -->
+        <div class="geo-search-wrap">
+            <div class="geo-search-box">
+                <span class="geo-icon">🔍</span>
+                <input id="geo-search-input" type="text" placeholder="Fly to any city…" autocomplete="off">
+            </div>
+            <ul id="geo-search-drop" class="geo-drop hidden"></ul>
+        </div>
 
         <section class="metrics-panel">
             <h2>Global Stats</h2>
@@ -106,7 +121,7 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="glow-btn">Initialize Prediction</button>
+                <button type="submit" class="glow-btn" id="btn-predict">Initialize Prediction</button>
             </form>
 
             <div id="prediction-result" class="hidden result-box">
@@ -117,7 +132,7 @@
 
         <section class="recommend-panel">
             <h2>Outdoor Safety Forecast</h2>
-            <p class="subtitle">Analyzes tomorrow's pollution clusters to pinpoint the healthiest times to exercise outside.</p>
+            <p class="subtitle">Analyzes pollution clusters to pinpoint the healthiest times to exercise outside.</p>
             
             <form id="recommend-form">
                 <div class="input-grid">
@@ -137,7 +152,7 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="glow-btn" style="background: var(--accent-alt);">Forecast Safe Outdoor Times</button>
+                <button type="submit" class="glow-btn" id="btn-recommend" style="background: var(--accent-alt);">Forecast Safe Outdoor Times</button>
             </form>
 
             <div id="recommend-result" class="hidden result-box" style="text-align: left; padding: 1rem;">
@@ -146,17 +161,17 @@
         </section>
         
         <footer>
-            <p>Powered by FastAPI & Leaflet</p>
+            <p>Powered by FastAPI &amp; Mapbox GL JS</p>
         </footer>
     </aside>
 
     <!-- MAC OS STYLE DOCK -->
     <div class="dock-container">
         <div class="dock">
-            <button class="dock-btn active" onclick="closeAllModals(event)">🌍 Map</button>
-            <button class="dock-btn" onclick="openModal(event, 'modal-timeseries')">📈 Time Series</button>
-            <button class="dock-btn" onclick="openModal(event, 'modal-experiments')">🧪 Experiments</button>
-            <button class="dock-btn" onclick="openModal(event, 'modal-clusters')">🗺️ Clusters</button>
+            <button class="dock-btn active" id="dock-map" onclick="closeAllModals(event)">🌍 Globe</button>
+            <button class="dock-btn" id="dock-ts" onclick="openModal(event, 'modal-timeseries')">📈 Time Series</button>
+            <button class="dock-btn" id="dock-exp" onclick="openModal(event, 'modal-experiments')">🧪 Experiments</button>
+            <button class="dock-btn" id="dock-clust" onclick="openModal(event, 'modal-clusters')">🗺️ Clusters</button>
         </div>
     </div>
 
@@ -201,7 +216,7 @@
     <!-- Clusters Modal -->
     <div id="modal-clusters" class="modal hidden">
         <div class="modal-header">
-            <h2>Station Clustering (PCA & t-SNE)</h2>
+            <h2>Station Clustering (PCA &amp; t-SNE)</h2>
             <button class="close-btn" onclick="closeAllModals()">×</button>
         </div>
         <div class="modal-body" style="display:flex; gap:1rem; height:80%;">
@@ -210,8 +225,6 @@
         </div>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="app.js"></script>
 </body>
 </html>

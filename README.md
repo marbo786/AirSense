@@ -223,18 +223,6 @@ All config is via environment variables (`.env`):
 
 ---
 
-## 👤 Author
 
-**Mohsin Saeed**
-📧 [marboo786@gmail.com](mailto:marboo786@gmail.com)
-🐙 [github.com/marbo786](https://github.com/marbo786)
-
----
-
-<div align="center">
-
-Built with ❤️ for AI221 MLOps
-
-⭐ Star this repo if you found it useful!
 
 </div>

@@ -13,6 +13,7 @@ import pandas as pd
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.metrics import calinski_harabasz_score, silhouette_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import AgglomerativeClustering
 
 logger = logging.getLogger(__name__)
 ARTIFACTS_PATH = Path(os.getenv("ARTIFACTS_PATH", "artifacts"))
@@ -82,6 +83,9 @@ def run(station_profile: pd.DataFrame) -> dict:
     joblib.dump(results[best_name]["model"], ARTIFACTS_PATH / "clusterer.joblib")
     joblib.dump(scaler, ARTIFACTS_PATH / "clusterer_scaler.joblib")
     joblib.dump(feature_cols, ARTIFACTS_PATH / "clusterer_features.joblib")
+    # Save cluster labels
+    joblib.dump(station_profile["cluster_kmeans"], ARTIFACTS_PATH / "cluster_kmeans.joblib")
+    joblib.dump(station_profile["cluster_dbscan"], ARTIFACTS_PATH / "cluster_dbscan.joblib")
 
     # Attach labels back to profile for downstream use
     station_profile = station_profile.copy()

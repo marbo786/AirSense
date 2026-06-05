@@ -115,20 +115,21 @@ async function loadMapData() {
     mapNodesCache = data.nodes;
 
     const geojson = {
-      type: 'FeatureCollection',
-      features: data.nodes
-        .filter(n => n.lat && n.lng)
-        .map(n => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [n.lng, n.lat] },
-          properties: {
-            city: n.city, country: n.country,
-            aqi_value: n.aqi_value || 0,
-            aqi_category: n.aqi_category || 'Unknown',
-            color: AQI_COLORS[n.aqi_category] || AQI_COLORS['Unknown'],
-          },
-        })),
-    };
+  type: 'FeatureCollection',
+  features: data.nodes
+    .filter(n => n.lat && n.lng)
+    .map(n => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [n.lng, n.lat] },
+      properties: {
+        city: n.city, country: n.country,
+        aqi_value: n.aqi_value || 0,
+        aqi_category: n.aqi_category || 'Unknown',
+        color: AQI_COLORS[n.aqi_category] || AQI_COLORS['Unknown'],
+        cluster_id: n.cluster_id || 0, // Add cluster_id property
+      },
+    })),
+};
 
     // Plain GeoJSON source — no clustering
     map.addSource('aqi-points', { type: 'geojson', data: geojson });

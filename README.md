@@ -56,7 +56,7 @@ Raw CSV Data (420K rows, 12 Beijing stations)
 | 🕐 **Time Series** | Prophet, ARIMA | ARIMA | RMSE=68.65 |
 | 🔵 **Clustering** | K-Means (k=3–5), DBSCAN | K-Means | Best silhouette score |
 | 📉 **Dim. Reduction** | PCA (95% var), t-SNE | — | Dashboard visualisation |
-| 🎯 **Recommendation** | Content-based filtering | — | `POST /recommend/activity-window` |
+| 🎯 **Recommendation** | Content-based filtering. | — | `POST /recommend/activity-window` |
 
 ---
 
@@ -138,7 +138,7 @@ python pipelines/training_flow.py
 
 Expected runtime: ~15 minutes on a modern CPU.
 
-> The pipeline uses `PREFECT_API_URL=http://localhost:4200/api` from `.env`. All tasks use `persist_result=False` so DataFrames are passed in-memory — keeping training fast while still reporting to the Prefect UI.
+> The pipeline uses the following `PREFECT_API_URL=http://localhost:4200/api` from `.env`. All tasks use `persist_result=False` so DataFrames are passed in-memory — keeping training fast while still reporting to the Prefect UI.
 
 ### 4. Reload the API with new models
 
@@ -163,7 +163,7 @@ python -m ruff check .
 
 ---
 
-## ⚙️ CI/CD Pipelines
+## ⚙️ CI/CD Pipeline
 
 | Workflow | Trigger | What it does |
 |----------|---------|-------------|

@@ -99,70 +99,6 @@ AirSense/
 
 ---
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Docker Desktop running
-- Python 3.10+
-
-### 1. Clone & configure
-
-```bash
-git clone https://github.com/marbo786/AirSense.git
-cd AirSense
-cp .env.example .env   # add your Discord webhook URL if desired
-```
-
-### 2. Start all services
-
-```bash
-docker compose up -d
-```
-
-| Service | URL |
-|---------|-----|
-| 🖥️ Frontend Dashboard | http://localhost:8080 |
-| ⚡ FastAPI (health check) | http://localhost:8000/health |
-| 📊 MLflow Tracking | http://localhost:5000 |
-| 🔄 Prefect Orchestration | http://localhost:4200 |
-
-> **Note:** Swagger/ReDoc (`/docs`) is disabled by default. Set `ENABLE_DOCS=true` in `.env` and restart `airsense-api` to enable it locally.
-
-### 3. Train models
-
-```bash
-# Requires: pip install -r requirements.txt
-python pipelines/training_flow.py
-```
-
-Expected runtime: ~15 minutes on a modern CPU.
-
-> The pipeline uses the following `PREFECT_API_URL=http://localhost:4200/api` from `.env`. All tasks use `persist_result=False` so DataFrames are passed in-memory — keeping training fast while still reporting to the Prefect UI.
-
-### 4. Reload the API with new models
-
-```bash
-docker compose restart api
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Unit + integration tests (no trained models needed)
-pytest tests/test_data.py tests/test_api.py tests/test_models.py -v --tb=short
-
-# ML quality tests with DeepChecks (requires trained models in artifacts/)
-pytest tests/test_deepchecks.py -v --tb=short --timeout=180
-
-# Lint
-python -m ruff check .
-```
-
----
-
 ## ⚙️ CI/CD Pipeline
 
 | Workflow | Trigger | What it does |
@@ -222,8 +158,6 @@ All config is via environment variables (`.env`):
 | 🚀 CI/CD | GitHub Actions |
 
 ---
-
-
 
 
 </div>
